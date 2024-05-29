@@ -31,9 +31,7 @@ public:
   void stop();
   void on_open(websocketpp::connection_hdl hdl);
   void on_close(websocketpp::connection_hdl hdl);
-  void send_update(const std::string &title, const std::string &artist,
-                   const std::string &artUrl, const bool &spotify_started,
-                   const bool &is_playing);
+  void send_update();
 
   // observer interface method
   void on_update(const std::string &title, const std::string &artist,

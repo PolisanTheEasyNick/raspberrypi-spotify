@@ -1,5 +1,33 @@
 #include "WSServer.h"
 
+std::string escape_quotes(const std::string &input) {
+  std::ostringstream escaped;
+  for (char c : input) {
+    if (c == '"') {
+      escaped << "\\\"";
+    } else {
+      escaped << c;
+    }
+  }
+  return escaped.str();
+}
+
+std::string create_json_message(const std::string &title,
+                                const std::string &artist,
+                                const std::string &artUrl, bool spotify_started,
+                                bool isPlaying) {
+  std::string escapedTitle = escape_quotes(title);
+  std::string escapedArtist = escape_quotes(artist);
+
+  std::string message =
+      "{\"title\": \"" + escapedTitle + "\", \"artist\": \"" + escapedArtist +
+      "\", \"artURL\": \"" + artUrl + "\", \"spotifyStarted\": \"" +
+      (spotify_started ? "True" : "False") + "\", \"isPlaying\": \"" +
+      (isPlaying ? "True" : "False") + "\"}";
+
+  return message;
+}
+
 WSServer::WSServer() {
   m_server.set_reuse_addr(true);
   m_server.init_asio();
@@ -37,30 +65,22 @@ void WSServer::stop() {
 
 void WSServer::on_open(websocketpp::connection_hdl hdl) {
   m_connections.insert(hdl);
-  std::string message =
-      "{\"title\": \"" + m_title + "\", \"artist\": \"" + m_artist +
-      "\", \"artURL\": \"" + m_artURL + "\", \"spotifyStarted\": \"" +
-      (m_spotify_started ? "True" : "False") + "\", \"isPlaying\": \"" +
-      (m_is_playing ? "True" : "False") + "\"}";
-  m_server.send(hdl, message, websocketpp::frame::opcode::text);
+
+  m_server.send(hdl,
+                create_json_message(m_title, m_artist, m_artURL,
+                                    m_spotify_started, m_is_playing),
+                websocketpp::frame::opcode::text);
 }
 
 void WSServer::on_close(websocketpp::connection_hdl hdl) {
   m_connections.erase(hdl);
 }
 
-void WSServer::send_update(const std::string &title, const std::string &artist,
-                           const std::string &artUrl,
-                           const bool &spotify_started, const bool &isPlaying) {
-  std::cout << "[WebSocket] Sending: title: " << title << ", " << artist << ", "
-            << artUrl
-            << ", spotify started: " << (spotify_started ? "true" : "false")
-            << ", is playing: " << (isPlaying ? "true" : "false") << std::endl;
-  std::string message =
-      "{\"title\": \"" + title + "\", \"artist\": \"" + artist +
-      "\", \"artURL\": \"" + artUrl + "\", \"spotifyStarted\": \"" +
-      (spotify_started ? "True" : "False") + "\", \"isPlaying\": \"" +
-      (isPlaying ? "True" : "False") + "\"}";
+void WSServer::send_update() {
+  auto message = create_json_message(m_title, m_artist, m_artURL,
+                                     m_spotify_started, m_is_playing);
+  std::cout << "[WebSocket] Sending: " << message << std::endl;
+
   for (auto hdl : m_connections) {
     m_server.send(hdl, message, websocketpp::frame::opcode::text);
   }
@@ -75,5 +95,5 @@ void WSServer::on_update(const std::string &title, const std::string &artist,
   m_artURL = artUrl;
   m_spotify_started = spotify_started;
   m_is_playing = isPlaying;
-  send_update(title, artist, artUrl, spotify_started, isPlaying);
+  send_update();
 }
