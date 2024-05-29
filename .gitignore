@@ -33,3 +33,5 @@
 
 build/
 .cache/
+
+src/web/config.js

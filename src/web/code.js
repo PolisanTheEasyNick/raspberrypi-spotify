@@ -2,7 +2,7 @@ async function getSpotifyInfoWS() {
     let socket;
 
     async function connectWebSocket() {
-        socket = new WebSocket("ws://127.0.0.1:4831");
+        socket = new WebSocket(PCWSServer);
 
         socket.addEventListener('open', () => {
             console.log('WebSocket connected');
