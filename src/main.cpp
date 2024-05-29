@@ -1,7 +1,11 @@
 #include "modules/DBusListener/DBusListener.h"
-#include <iostream>
+#include "modules/WS-server/WSServer.h"
 
 int main(int, char **) {
-  std::cout << "Hello, from raspberrypi-spotify!\n";
   DBusListener dbusListener;
+  WSServer wsServer;
+
+  dbusListener.add_observer(&wsServer);
+
+  wsServer.run(4831);
 }
