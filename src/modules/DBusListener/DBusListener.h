@@ -13,6 +13,7 @@ private:
   void on_name_owner_changed(sdbus::Signal &signal);
   void subscribe();
   void unsubscribe();
+  void parseMetadata(std::map<std::string, sdbus::Variant> meta);
 
   // spotify related data
   std::string m_artURL;

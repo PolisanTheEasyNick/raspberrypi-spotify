@@ -17,54 +17,27 @@ DBusListener::DBusListener() {
       [this](sdbus::Signal &sig) { on_name_owner_changed(sig); });
   proxy->finishRegistration();
   m_dbus_conn->enterEventLoopAsync();
+
+  auto metaDataProxy =
+      sdbus::createProxy(*m_dbus_conn.get(), "org.mpris.MediaPlayer2.spotify",
+                         "/org/mpris/MediaPlayer2");
+  sdbus::Variant metadata_v;
+  metaDataProxy->callMethod("Get")
+      .onInterface("org.freedesktop.DBus.Properties")
+      .withArguments("org.mpris.MediaPlayer2.Player", "Metadata")
+      .storeResultsTo(metadata_v);
+  parseMetadata(metadata_v.get<std::map<std::string, sdbus::Variant>>());
 }
 
 void DBusListener::on_properties_changed(sdbus::Signal &signal) {
   std::string string_arg;
   std::map<std::string, sdbus::Variant> properties;
-  std::vector<std::string> array_of_strings;
   signal >> string_arg;
   signal >> properties;
   for (auto &prop : properties) {
-    // refer to Crescendo project if you need more examples
-    // https://github.com/PolisanTheEasyNick/Crescendo
     if (prop.first == "Metadata") {
       auto meta_v = prop.second.get<std::map<std::string, sdbus::Variant>>();
-
-      for (auto &data : meta_v) {
-        std::string type = data.second.peekValueType();
-        if (type == "s") {
-          try {
-            if (data.first == "xesam:title") {
-              m_title = data.second.get<std::string>();
-              std::cout << "[DBus] New title: " << m_title << std::endl;
-            } else if (data.first == "mpris:artUrl") {
-              m_artURL = data.second.get<std::string>();
-              std::cout << "[DBus] New Art URL: " << m_artURL << std::endl;
-            }
-          } catch (const sdbus::Error &e) {
-            std::cout << std::string(
-                             "[DBus] Error while trying to fetch string: ") +
-                             e.what();
-            std::cout << "[DBus] Received type: \"" + type +
-                             "\" while \"s\" expected.";
-            break;
-          }
-        } else if (type == "as") {
-          if (data.first == "xesam:artist") {
-            m_artist = "";
-            std::vector<std::string> arr =
-                data.second.get<std::vector<std::string>>();
-            for (auto &entry : arr) {
-              if (m_artist == "" && !entry.empty())
-                m_artist = entry;
-              else if (!entry.empty())
-                m_artist += ", " + entry;
-            }
-            std::cout << "[DBus] New artist: " << m_artist << std::endl;
-          }
-        }
-      }
+      parseMetadata(properties);
       notify_observers(m_title, m_artist, m_artURL);
     }
   }
@@ -97,3 +70,44 @@ void DBusListener::subscribe() {
 }
 
 void DBusListener::unsubscribe() { m_proxy_signal->unregister(); }
+
+void DBusListener::parseMetadata(std::map<std::string, sdbus::Variant> meta) {
+  std::cout << "[DBus] Started parse metadata" << std::endl;
+  // refer to Crescendo project if you need more examples
+  // https://github.com/PolisanTheEasyNick/Crescendo
+
+  for (auto &data : meta) {
+    std::string type = data.second.peekValueType();
+    if (type == "s") {
+      try {
+        if (data.first == "xesam:title") {
+          m_title = data.second.get<std::string>();
+          std::cout << "[DBus] New title: " << m_title << std::endl;
+        } else if (data.first == "mpris:artUrl") {
+          m_artURL = data.second.get<std::string>();
+          std::cout << "[DBus] New Art URL: " << m_artURL << std::endl;
+        }
+      } catch (const sdbus::Error &e) {
+        std::cout << std::string(
+                         "[DBus] Error while trying to fetch string: ") +
+                         e.what();
+        std::cout << "[DBus] Received type: \"" + type +
+                         "\" while \"s\" expected.";
+        break;
+      }
+    } else if (type == "as") {
+      if (data.first == "xesam:artist") {
+        m_artist = "";
+        std::vector<std::string> arr =
+            data.second.get<std::vector<std::string>>();
+        for (auto &entry : arr) {
+          if (m_artist == "" && !entry.empty())
+            m_artist = entry;
+          else if (!entry.empty())
+            m_artist += ", " + entry;
+        }
+        std::cout << "[DBus] New artist: " << m_artist << std::endl;
+      }
+    }
+  }
+}

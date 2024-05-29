@@ -18,9 +18,15 @@ private:
            std::owner_less<websocketpp::connection_hdl>>
       m_connections;
 
+  // last sent spotify related data
+  std::string m_artURL;
+  std::string m_artist;
+  std::string m_title;
+
 public:
   WSServer();
   void run(uint16_t port);
+  void stop();
   void on_open(websocketpp::connection_hdl hdl);
   void on_close(websocketpp::connection_hdl hdl);
   void send_update(const std::string &title, const std::string &artist,

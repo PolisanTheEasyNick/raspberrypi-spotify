@@ -23,8 +23,13 @@ void WSServer::run(uint16_t port) {
   }
 }
 
+void WSServer::stop() { m_server.stop(); }
+
 void WSServer::on_open(websocketpp::connection_hdl hdl) {
   m_connections.insert(hdl);
+  std::string message = "{\"title\": " + m_title + ", \"artist\": " + m_artist +
+                        "\"artURL\": " + m_artURL + "\"}";
+  m_server.send(hdl, message, websocketpp::frame::opcode::text);
 }
 
 void WSServer::on_close(websocketpp::connection_hdl hdl) {
@@ -45,5 +50,8 @@ void WSServer::send_update(const std::string &title, const std::string &artist,
 void WSServer::on_update(const std::string &title, const std::string &artist,
                          const std::string &artUrl) {
   std::cout << "[WebSocket] Got update!!!" << std::endl;
+  m_title = title;
+  m_artist = artist;
+  m_artURL = artUrl;
   send_update(title, artist, artUrl);
 }
