@@ -4,18 +4,16 @@
 #include <iostream>
 #include <thread>
 
-// Global flag for signal handling
 bool running = true;
 
-// Signal handler function
 void signal_handler(int signal) {
   if (signal == SIGINT || signal == SIGTERM) {
+    std::cout << "[main] SIGINT or SIGTERM captured" << std::endl;
     running = false;
   }
 }
 
 int main(int, char **) {
-  // Set up the signal handler
   std::signal(SIGINT, signal_handler);
   std::signal(SIGTERM, signal_handler);
 
@@ -23,10 +21,8 @@ int main(int, char **) {
   WSServer wsServer;
 
   dbusListener.add_observer(&wsServer);
-
+  dbusListener.getSpotifyInfo();
   std::thread ws_thread([&wsServer] { wsServer.run(4831); });
-
-  // Main thread sleeps and periodically checks the running flag
   while (running) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }

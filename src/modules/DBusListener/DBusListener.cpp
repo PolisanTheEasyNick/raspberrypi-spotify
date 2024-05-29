@@ -1,8 +1,10 @@
 #include "DBusListener.h"
 #include <iostream>
+#include <sdbus-c++/Error.h>
 
 DBusListener::DBusListener() {
   m_dbus_conn = sdbus::createSessionBusConnection();
+
   if (!m_dbus_conn) {
     return;
   }
@@ -17,16 +19,7 @@ DBusListener::DBusListener() {
       [this](sdbus::Signal &sig) { on_name_owner_changed(sig); });
   proxy->finishRegistration();
   m_dbus_conn->enterEventLoopAsync();
-
-  auto metaDataProxy =
-      sdbus::createProxy(*m_dbus_conn.get(), "org.mpris.MediaPlayer2.spotify",
-                         "/org/mpris/MediaPlayer2");
-  sdbus::Variant metadata_v;
-  metaDataProxy->callMethod("Get")
-      .onInterface("org.freedesktop.DBus.Properties")
-      .withArguments("org.mpris.MediaPlayer2.Player", "Metadata")
-      .storeResultsTo(metadata_v);
-  parseMetadata(metadata_v.get<std::map<std::string, sdbus::Variant>>());
+  getSpotifyInfo();
 }
 
 void DBusListener::on_properties_changed(sdbus::Signal &signal) {
@@ -38,7 +31,7 @@ void DBusListener::on_properties_changed(sdbus::Signal &signal) {
     if (prop.first == "Metadata") {
       auto meta_v = prop.second.get<std::map<std::string, sdbus::Variant>>();
       parseMetadata(properties);
-      notify_observers(m_title, m_artist, m_artURL);
+      notify_observers(m_title, m_artist, m_artURL, m_spotify_started);
     }
   }
 }
@@ -48,15 +41,17 @@ void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
   signal >> name >> old_owner >> new_owner;
 
   if (name == "org.mpris.MediaPlayer2.spotify") {
-    // TODO: Send these updates
     if (new_owner.empty()) {
       std::cout << "[DBus] org.mpris.MediaPlayer2.spotify has been removed"
                 << std::endl;
+      m_spotify_started = false;
     } else {
       std::cout << "[DBus] org.mpris.MediaPlayer2.spotify has been created"
                 << std::endl;
+      m_spotify_started = true;
     }
   }
+  notify_observers(m_title, m_artist, m_artURL, m_spotify_started);
 }
 
 void DBusListener::subscribe() {
@@ -70,6 +65,26 @@ void DBusListener::subscribe() {
 }
 
 void DBusListener::unsubscribe() { m_proxy_signal->unregister(); }
+
+void DBusListener::getSpotifyInfo() {
+  // gets spotify info, writes into variables, notifies observers
+  try {
+    auto metaDataProxy =
+        sdbus::createProxy(*m_dbus_conn.get(), "org.mpris.MediaPlayer2.spotify",
+                           "/org/mpris/MediaPlayer2");
+    sdbus::Variant metadata_v;
+    metaDataProxy->callMethod("Get")
+        .onInterface("org.freedesktop.DBus.Properties")
+        .withArguments("org.mpris.MediaPlayer2.Player", "Metadata")
+        .storeResultsTo(metadata_v);
+    parseMetadata(metadata_v.get<std::map<std::string, sdbus::Variant>>());
+    m_spotify_started = true;
+  } catch (sdbus::Error) {
+    std::cout << "[DBus] Spotify not started!" << std::endl;
+    m_spotify_started = false;
+  }
+  notify_observers(m_title, m_artist, m_artURL, m_spotify_started);
+}
 
 void DBusListener::parseMetadata(std::map<std::string, sdbus::Variant> meta) {
   std::cout << "[DBus] Started parse metadata" << std::endl;

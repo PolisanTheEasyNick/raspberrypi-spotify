@@ -19,9 +19,11 @@ private:
   std::string m_artURL;
   std::string m_artist;
   std::string m_title;
+  bool m_spotify_started;
 
 public:
   DBusListener();
+  void getSpotifyInfo();
 };
 
 #endif // DBUSLISTENER.H

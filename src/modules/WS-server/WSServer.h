@@ -22,6 +22,7 @@ private:
   std::string m_artURL;
   std::string m_artist;
   std::string m_title;
+  bool m_spotify_started;
 
 public:
   WSServer();
@@ -30,11 +31,12 @@ public:
   void on_open(websocketpp::connection_hdl hdl);
   void on_close(websocketpp::connection_hdl hdl);
   void send_update(const std::string &title, const std::string &artist,
-                   const std::string &artUrl);
+                   const std::string &artUrl, const bool &spotify_started);
 
   // observer interface method
   void on_update(const std::string &title, const std::string &artist,
-                 const std::string &artUrl) override;
+                 const std::string &artUrl,
+                 const bool &spotify_started) override;
 };
 
 #endif // WSSERVER.H

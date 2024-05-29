@@ -16,9 +16,10 @@ public:
 
 protected:
   void notify_observers(const std::string &title, const std::string &artist,
-                        const std::string &artUrl) {
+                        const std::string &artUrl,
+                        const bool &spotify_started) {
     for (auto &observer : observers) {
-      observer->on_update(title, artist, artUrl);
+      observer->on_update(title, artist, artUrl, spotify_started);
     }
   }
 
