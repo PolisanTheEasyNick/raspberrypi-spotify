@@ -9,26 +9,15 @@ DBusListener::DBusListener() {
   }
   std::cout << "Connected to D-Bus as \"" << m_dbus_conn->getUniqueName()
             << "\".\n";
-  std::vector<std::string> result_of_call;
+  subscribe(); // to spotify
+
   auto proxy = sdbus::createProxy(*m_dbus_conn.get(), "org.freedesktop.DBus",
                                   "/org/freedesktop/DBus");
-  proxy->callMethod("ListNames")
-      .onInterface("org.freedesktop.DBus")
-      .storeResultsTo(result_of_call);
-  if (!result_of_call.empty()) { // if vector empty - stop parsing
-    std::cout << "Got reply from DBus\n";
-    for (const auto &name : result_of_call) { // check every name
-      if (strstr(name.c_str(), "org.mpris.MediaPlayer2.") == name.c_str()) {
-        std::cout << "Found media player: " << name << std::endl;
-        if (name == "org.mpris.MediaPlayer2.spotify") {
-          std::cout << "Found spotify!" << std::endl;
-          subscribe(name);
-          break;
-          // TODO: why search?
-        }
-      }
-    }
-  }
+  proxy->registerSignalHandler(
+      "org.freedesktop.DBus", "NameOwnerChanged",
+      [this](sdbus::Signal &sig) { on_name_owner_changed(sig); });
+  proxy->finishRegistration();
+  m_dbus_conn->enterEventLoop(); //..LoopAsync
 }
 
 void DBusListener::on_properties_changed(sdbus::Signal &signal) {
@@ -293,21 +282,29 @@ void DBusListener::on_properties_changed(sdbus::Signal &signal) {
   }
 }
 
-void DBusListener::subscribe(std::string name) {
-  m_proxy_signal =
-      sdbus::createProxy(*m_dbus_conn.get(), name, "/org/mpris/MediaPlayer2");
-  m_proxy_signal->registerSignalHandler( // subscribe to Dbus Signals
-      "org.freedesktop.DBus.Properties", "PropertiesChanged",
-      [this](sdbus::Signal &sig) {
-        on_properties_changed(sig);
-      }); // call corresponding functions
-          //   m_proxy_signal->registerSignalHandler(
-          //       "org.mpris.MediaPlayer2.Player", "Seeked",
-          //       [this](sdbus::Signal &sig) { on_seeked(sig); });
-  m_proxy_signal->finishRegistration();
+void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
+  std::string name, old_owner, new_owner;
+  signal >> name >> old_owner >> new_owner;
 
-  // Start the event loop in a new thread
-  m_dbus_conn->enterEventLoop(); //..LoopAsync
+  if (name == "org.mpris.MediaPlayer2.spotify") {
+    if (new_owner.empty()) {
+      std::cout << "org.mpris.MediaPlayer2.spotify has been removed"
+                << std::endl;
+    } else {
+      std::cout << "org.mpris.MediaPlayer2.spotify has been created"
+                << std::endl;
+    }
+  }
 }
 
-void DBusListener::unsubscribe() {}
+void DBusListener::subscribe() {
+  m_proxy_signal =
+      sdbus::createProxy(*m_dbus_conn.get(), "org.mpris.MediaPlayer2.spotify",
+                         "/org/mpris/MediaPlayer2");
+  m_proxy_signal->registerSignalHandler( // subscribe to Dbus Signals
+      "org.freedesktop.DBus.Properties", "PropertiesChanged",
+      [this](sdbus::Signal &sig) { on_properties_changed(sig); });
+  m_proxy_signal->finishRegistration();
+}
+
+void DBusListener::unsubscribe() { m_proxy_signal->unregister(); }
