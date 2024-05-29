@@ -1,5 +1,6 @@
 # raspberrypi-spotify [WIP]
-Show current playing song from Spotify on display connected to Raspberry Pi
+Show current playing song from Spotify on display connected to Raspberry Pi.  
+Currently hard-coded to 480x320 display, but you can easily edit it in .css and .js file!
 
 <p align="center">
   <img src="https://github.com/PolisanTheEasyNick/raspberrypi-spotify/assets/39007846/be85a817-5478-47c3-8195-564739d86425" width=50% height=50%>
