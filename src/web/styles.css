@@ -35,6 +35,7 @@ html {
     z-index: 1;
     animation-name: fadeBackground;
     animation-duration: 0.5s;
+    transform: scale(1.2)
 }
 
 @keyframes fadeBackground {
