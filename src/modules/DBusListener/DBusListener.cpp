@@ -52,7 +52,7 @@ void DBusListener::on_properties_changed(sdbus::Signal &signal) {
   for (auto &prop : properties) {
     if (prop.first == "Metadata") {
       auto meta_v = prop.second.get<std::map<std::string, sdbus::Variant>>();
-      isChanged = parseMetadata(properties);
+      isChanged = parseMetadata(meta_v);
     } else if (prop.first == "PlaybackStatus") {
       isChanged = update_if_changed(
           m_is_playing, (prop.second.get<std::string>() == "Playing"));
@@ -96,6 +96,7 @@ void DBusListener::getSpotifyInfo() {
         .onInterface("org.freedesktop.DBus.Properties")
         .withArguments("org.mpris.MediaPlayer2.Player", "Metadata")
         .storeResultsTo(metadata_v);
+
     isChanged =
         parseMetadata(metadata_v.get<std::map<std::string, sdbus::Variant>>());
     isChanged = update_if_changed(m_spotify_started, true);
