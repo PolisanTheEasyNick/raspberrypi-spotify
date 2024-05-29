@@ -18,16 +18,16 @@ async function getSpotifyInfoWS() {
 
                 if (title.length > 55) {
                     title = title.substring(0, 54) + "…";
-                    document.getElementById('title').style.fontSize = "2em";
+                    document.getElementById('title').style.fontSize = "1em";
                 } else {
-                    document.getElementById('title').style.fontSize = "3em";
+                    document.getElementById('title').style.fontSize = "1.5em";
                 }
 
                 if (artist.length > 15) {
                     artist = artist.substring(0, 15) + "…";
-                    document.getElementById('artist').style.fontSize = "2em";
+                    document.getElementById('artist').style.fontSize = "1em";
                 } else {
-                    document.getElementById('artist').style.fontSize = "2.5em";
+                    document.getElementById('artist').style.fontSize = "1.25em";
                 }
 
                 console.log("Got title: ", title, ", artist: ", artist, ", artURL: ", artURL);
@@ -58,28 +58,6 @@ async function getSpotifyInfoWS() {
     }
 
     await connectWebSocket();
-
-    function adjustFontSize() {
-        const container = document.querySelector('.container');
-        const title = document.getElementById('title');
-        const artist = document.getElementById('artist');
-
-        let titleFontSize = 4;
-        let artistFontSize = 2.5;
-
-        title.style.fontSize = `${titleFontSize}em`;
-        artist.style.fontSize = `${artistFontSize}em`;
-
-        while ((title.scrollWidth > container.clientWidth || title.scrollHeight > container.clientHeight) && titleFontSize > 1) {
-            titleFontSize -= 0.1;
-            title.style.fontSize = `${titleFontSize}em`;
-        }
-
-        while ((artist.scrollWidth > container.clientWidth || artist.scrollHeight > container.clientHeight) && artistFontSize > 1) {
-            artistFontSize -= 0.1;
-            artist.style.fontSize = `${artistFontSize}em`;
-        }
-    }
 
 }
 getSpotifyInfoWS()
