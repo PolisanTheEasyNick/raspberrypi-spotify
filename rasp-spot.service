@@ -1,0 +1,12 @@
+[Unit]
+Description=RaspberryPi Spotify service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+ExecStart=/usr/local/bin/raspberrypi-spotify
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
