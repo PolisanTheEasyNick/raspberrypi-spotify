@@ -55,27 +55,26 @@ html {
     color: white;
     text-shadow: 2px 3px 2px black;
     justify-content: center;
-    margin: 0 50px;
+    margin: 0 0 0 50px;
+    text-align: center;
 }
 
 #album-art {
-    max-width: 400px;
-    max-height: 400px;
+    max-width: 500px;
+    max-height: 500px;
     margin-right: 20px;
     transition: opacity 0.5s ease;
 }
 
 .info {
     text-align: left;
-    flex-shrink: 0;
+
 }
 
 #title {
     margin: 0;
-    font-size: 4em;
 }
 
 #artist {
-    margin: 0;
-    font-size: 3em;
+    margin-top: 20px;
 }

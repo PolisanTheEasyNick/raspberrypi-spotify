@@ -16,22 +16,23 @@ async function getSpotifyInfoWS() {
                 let artist = spotifyData.artist;
                 const artURL = spotifyData.artURL;
 
-                if (title.length > 50) {
-                    //title = title.substring(0, 50) + "...";
-                    document.getElementById('title').style.fontSize = `2.5em`;
+                if (title.length > 55) {
+                    title = title.substring(0, 54) + "…";
+                    document.getElementById('title').style.fontSize = "2em";
                 } else {
-                    document.getElementById('title').style.fontSize = `3em`;
+                    document.getElementById('title').style.fontSize = "3em";
                 }
 
-                if (artist.length > 50) {
-                    //artist = artist.substring(0, 50) + "...";
-                    document.getElementById('artist').style.fontSize = `1em`;
+                if (artist.length > 15) {
+                    artist = artist.substring(0, 15) + "…";
+                    document.getElementById('artist').style.fontSize = "2em";
                 } else {
-                    document.getElementById('artist').style.fontSize = `3em`;
+                    document.getElementById('artist').style.fontSize = "2.5em";
                 }
 
                 console.log("Got title: ", title, ", artist: ", artist, ", artURL: ", artURL);
                 document.getElementById('title').innerText = title;
+
                 document.getElementById('artist').innerText = artist;
                 const albumArt = document.getElementById('album-art');
                 albumArt.style.opacity = 0;
