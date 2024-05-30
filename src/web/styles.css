@@ -31,7 +31,7 @@ html {
     height: 100%;
     background-size: cover;
     background-position: center;
-    filter: blur(20px) brightness(60%);
+    filter: blur(10px) brightness(60%);
     z-index: 1;
     animation: rotate 50s linear infinite;
 
