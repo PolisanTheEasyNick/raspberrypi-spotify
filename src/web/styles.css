@@ -33,18 +33,17 @@ html {
     background-position: center;
     filter: blur(20px) brightness(60%);
     z-index: 1;
-    animation-name: fadeBackground;
-    animation-duration: 0.5s;
-    transform: scale(1.5)
+    animation: rotate 50s linear infinite;
+
 }
 
-@keyframes fadeBackground {
+@keyframes rotate {
     from {
-        opacity: 0;
+        transform: rotate(0deg) scale(2);
     }
 
     to {
-        opacity: 1;
+        transform: rotate(360deg) scale(2);
     }
 }
 
