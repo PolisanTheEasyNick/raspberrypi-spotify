@@ -22,7 +22,7 @@ private:
   std::string m_album;
   bool m_spotify_started;
   bool m_is_playing;
-  bool m_is_gamemode_running;
+  bool m_is_gamemode_running = false;
 
 public:
   DBusListener();

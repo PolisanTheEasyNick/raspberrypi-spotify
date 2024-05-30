@@ -28,10 +28,10 @@ std::string create_json_message(const std::string &title,
   message += ", \"artURL\": \"" + artUrl + "\"";
   message += ", \"spotifyStarted\": \"" +
              std::string(spotify_started ? "True" : "False") + "\"";
-  message += ", \"gamemodeStarted\": \"" +
-             std::string(isGameRunning ? "True" : "False") + "\"";
   message +=
       ", \"isPlaying\": \"" + std::string(isPlaying ? "True" : "False") + "\"";
+  message += ", \"gamemodeStarted\": \"" +
+             std::string(isGameRunning ? "True" : "False") + "\"";
   message += "}";
 
   return message;
