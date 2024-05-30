@@ -49,14 +49,16 @@ DBusListener::DBusListener() {
 
   // searching for spotifyd
   std::string spotifydDest = findSpotifyd();
-  std::cout << "[DBus] Found spotifyd: " << spotifydDest << std::endl;
-  // register to it prop changed
-  m_spotifyd_properties_proxy = sdbus::createProxy(
-      *m_dbus_conn.get(), spotifydDest, "/org/mpris/MediaPlayer2");
-  m_spotifyd_properties_proxy->registerSignalHandler(
-      "org.freedesktop.DBus.Properties", "PropertiesChanged",
-      [this](sdbus::Signal &sig) { on_spotify_prop_changed(sig); });
-  m_spotifyd_properties_proxy->finishRegistration();
+  if (spotifydDest != "") {
+    std::cout << "[DBus] Found spotifyd: " << spotifydDest << std::endl;
+    // register to it prop changed
+    m_spotifyd_properties_proxy = sdbus::createProxy(
+        *m_dbus_conn.get(), spotifydDest, "/org/mpris/MediaPlayer2");
+    m_spotifyd_properties_proxy->registerSignalHandler(
+        "org.freedesktop.DBus.Properties", "PropertiesChanged",
+        [this](sdbus::Signal &sig) { on_spotify_prop_changed(sig); });
+    m_spotifyd_properties_proxy->finishRegistration();
+  }
 
   m_dbus_conn->enterEventLoopAsync();
 }
@@ -83,6 +85,8 @@ void DBusListener::on_spotify_prop_changed(sdbus::Signal &signal) {
           m_is_playing, (prop.second.get<std::string>() == "Playing"));
     }
   }
+  std::cout << "[dbus] on spotify prop changed is changed: " << isChanged
+            << std::endl;
   if (isChanged)
     notify_observers(m_title, m_artist, m_album, m_artURL, m_spotify_started,
                      m_is_playing, m_is_gamemode_running);
@@ -98,7 +102,15 @@ void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
       std::cout << "[DBus] org.mpris.MediaPlayer2.spotify has been removed"
                 << std::endl;
       isChanged |= update_if_changed(m_spotify_started, false);
+      m_spotify_properties_proxy->unregister();
     } else {
+      m_spotify_properties_proxy = sdbus::createProxy(
+          *m_dbus_conn.get(), "org.mpris.MediaPlayer2.spotify",
+          "/org/mpris/MediaPlayer2");
+      m_spotify_properties_proxy->registerSignalHandler(
+          "org.freedesktop.DBus.Properties", "PropertiesChanged",
+          [this](sdbus::Signal &sig) { on_spotify_prop_changed(sig); });
+      m_spotify_properties_proxy->finishRegistration();
       std::cout << "[DBus] org.mpris.MediaPlayer2.spotify has been created"
                 << std::endl;
       isChanged |= update_if_changed(m_spotify_started, true);
@@ -189,7 +201,7 @@ void DBusListener::getSpotifyInfo() {
     isChanged |= update_if_changed(m_is_playing,
                                    (playback.get<std::string>() == "Playing"));
   } catch (sdbus::Error) {
-    std::cout << "[DBus] Spotify not started!" << std::endl;
+    std::cout << "[DBus] spotifyd not started!" << std::endl;
     isChanged |= update_if_changed(m_spotify_started, false);
     isChanged |= update_if_changed(m_is_playing, false);
   }
