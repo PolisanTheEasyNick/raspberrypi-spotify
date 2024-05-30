@@ -25,6 +25,7 @@ private:
   std::string m_album;
   bool m_spotify_started;
   bool m_is_playing;
+  bool m_is_gamemode_running;
 
 public:
   WSServer();
@@ -37,7 +38,8 @@ public:
   // observer interface method
   void on_update(const std::string &title, const std::string &artist,
                  const std::string &ablum, const std::string &artUrl,
-                 const bool &spotify_started, const bool &is_playing) override;
+                 const bool &spotify_started, const bool &is_playing,
+                 const bool &is_game_running) override;
 };
 
 #endif // WSSERVER.H

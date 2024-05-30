@@ -18,24 +18,34 @@ DBusListener::DBusListener() {
   }
   std::cout << "[DBus] Connected to D-Bus as \"" << m_dbus_conn->getUniqueName()
             << "\".\n";
+
+  // registering to spotify updates
   m_properties_proxy =
       sdbus::createProxy(*m_dbus_conn.get(), "org.mpris.MediaPlayer2.spotify",
                          "/org/mpris/MediaPlayer2");
   m_properties_proxy->registerSignalHandler( // subscribe to Dbus Signals
       "org.freedesktop.DBus.Properties", "PropertiesChanged",
-      [this](sdbus::Signal &sig) { on_properties_changed(sig); });
+      [this](sdbus::Signal &sig) { on_spotify_prop_changed(sig); });
   m_properties_proxy->finishRegistration();
 
+  // registering to spotify closed/open
   m_name_owner_proxy = sdbus::createProxy(
       *m_dbus_conn.get(), "org.freedesktop.DBus", "/org/freedesktop/DBus");
   m_name_owner_proxy->registerSignalHandler(
       "org.freedesktop.DBus", "NameOwnerChanged",
       [this](sdbus::Signal &sig) { on_name_owner_changed(sig); });
   m_name_owner_proxy->finishRegistration();
-  m_dbus_conn->enterEventLoopAsync();
 
-  // commented bc needed to call after observer is subscribed
-  // getSpotifyInfo();
+  // registering to gamemoderun changes
+  m_gamemode_proxy =
+      sdbus::createProxy(*m_dbus_conn.get(), "com.feralinteractive.GameMode",
+                         "/com/feralinteractive/GameMode");
+  m_gamemode_proxy->registerSignalHandler(
+      "org.freedesktop.DBus.Properties", "PropertiesChanged",
+      [this](sdbus::Signal &sig) { on_game_prop_changed(sig); });
+  m_gamemode_proxy->finishRegistration();
+
+  m_dbus_conn->enterEventLoopAsync();
 }
 
 DBusListener::~DBusListener() {
@@ -43,7 +53,7 @@ DBusListener::~DBusListener() {
   m_name_owner_proxy->unregister();
 }
 
-void DBusListener::on_properties_changed(sdbus::Signal &signal) {
+void DBusListener::on_spotify_prop_changed(sdbus::Signal &signal) {
   std::string string_arg;
   std::map<std::string, sdbus::Variant> properties;
   signal >> string_arg;
@@ -60,7 +70,7 @@ void DBusListener::on_properties_changed(sdbus::Signal &signal) {
   }
   if (isChanged)
     notify_observers(m_title, m_artist, m_album, m_artURL, m_spotify_started,
-                     m_is_playing);
+                     m_is_playing, m_is_gamemode_running);
 }
 
 void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
@@ -81,7 +91,23 @@ void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
   }
   if (isChanged)
     notify_observers(m_title, m_artist, m_album, m_artURL, m_spotify_started,
-                     m_is_playing);
+                     m_is_playing, m_is_gamemode_running);
+}
+
+void DBusListener::on_game_prop_changed(sdbus::Signal &signal) {
+  std::cout << "[GameMode] Game prop changed!" << std::endl;
+  std::string string_arg;
+  std::map<std::string, sdbus::Variant> properties;
+  signal >> string_arg;
+  signal >> properties;
+  std::cout << "[GameMode] Client count: "
+            << properties["ClientCount"].get<int>() << std::endl;
+
+  // update variable and notify if updated
+  if (update_if_changed(m_is_gamemode_running,
+                        properties["ClientCount"].get<int>() > 0))
+    notify_observers(m_title, m_artist, m_album, m_artURL, m_spotify_started,
+                     m_is_playing, m_is_gamemode_running);
 }
 
 void DBusListener::getSpotifyInfo() {
@@ -111,7 +137,7 @@ void DBusListener::getSpotifyInfo() {
   }
   if (isChanged)
     notify_observers(m_title, m_artist, m_album, m_artURL, m_spotify_started,
-                     m_is_playing);
+                     m_is_playing, m_is_gamemode_running);
 }
 
 bool DBusListener::parseMetadata(std::map<std::string, sdbus::Variant> meta) {

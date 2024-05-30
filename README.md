@@ -33,6 +33,6 @@ For starting service on system boot you can use:
 ## TODO
 - [x] WS server  
 - [x] DBus listener  
-- [ ] gamemoderun detector from DBus (for showing monitoring info instead Spotify while playing)  
+- [x] gamemoderun detector from DBus (for showing monitoring info instead Spotify while playing)  
 - [x] systemctl service  
 - [ ] spotifyd support 

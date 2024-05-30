@@ -17,10 +17,11 @@ public:
 protected:
   void notify_observers(const std::string &title, const std::string &artist,
                         const std::string &album, const std::string &artUrl,
-                        const bool &spotify_started, const bool &is_playing) {
+                        const bool &spotify_started, const bool &is_playing,
+                        const bool &is_gamemode_running) {
     for (auto &observer : observers) {
       observer->on_update(title, artist, album, artUrl, spotify_started,
-                          is_playing);
+                          is_playing, is_gamemode_running);
     }
   }
 
