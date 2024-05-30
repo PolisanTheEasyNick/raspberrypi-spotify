@@ -17,24 +17,6 @@ async function getSpotifyInfoWS() {
                 let album = spotifyData.album;
                 const artURL = spotifyData.artURL;
 
-                if (title.length > 55) {
-                    title = title.substring(0, 54) + "…";
-                    document.getElementById('title').style.fontSize = "1em";
-                } else {
-                    document.getElementById('title').style.fontSize = "1.5em";
-                }
-
-                if (artist.length > 16) {
-                    artist = artist.substring(0, 15) + "…";
-                    document.getElementById('artist').style.fontSize = "1em";
-                } else {
-                    document.getElementById('artist').style.fontSize = "1.25em";
-                }
-
-                if (album.length > 20) {
-                    album = album.substring(0, 19) + "…";
-                }
-
                 console.log("Got title: ", title, ", artist: ", artist, ", artURL: ", artURL, ", album: ", album);
                 document.getElementById('title').innerText = title;
                 document.getElementById('album').innerText = album;
@@ -49,8 +31,20 @@ async function getSpotifyInfoWS() {
                 };
                 img.onerror = function() {
                     console.log("New image failed to load. Keeping the old one.");
+                    if (!albumArt.src) {
+                        albumArt.style.opacity = 0;
+                        document.querySelector('.background').style.backgroundImage = "none";
+                        document.querySelector('.background').style.backgroundColor = "black";
+                    }
                 };
-                img.src = artURL;
+                if(artURL) {
+                  img.src = artURL;
+                } else {
+                    console.log("No art URL!");
+                    albumArt.style.opacity = 0;
+                    document.querySelector('.background').style.backgroundImage = "none";
+                    document.querySelector('.background').style.backgroundColor = "black";
+                }
             } catch (error) {
                 console.error('Error parsing WebSocket data', error);
             }

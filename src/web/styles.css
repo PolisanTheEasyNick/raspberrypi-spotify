@@ -72,16 +72,35 @@ html {
 }
 
 #title {
+    font-size: 2em;
     margin: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #artist {
+    font-size: 1.5em;
     margin-top: 10px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all;
 }
 
 #album {
+    font-size: 1.5em;
     margin-top: 15px;
     color: #c1c1c1;
-    font-size: 1em;
     text-shadow: 1px 1px 1px black;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all;
 }
