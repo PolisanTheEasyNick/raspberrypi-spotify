@@ -59,7 +59,7 @@ void DBusListener::on_properties_changed(sdbus::Signal &signal) {
     }
   }
   if (isChanged)
-    notify_observers(m_title, m_artist, m_artURL, m_spotify_started,
+    notify_observers(m_title, m_artist, m_album, m_artURL, m_spotify_started,
                      m_is_playing);
 }
 
@@ -80,7 +80,7 @@ void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
     }
   }
   if (isChanged)
-    notify_observers(m_title, m_artist, m_artURL, m_spotify_started,
+    notify_observers(m_title, m_artist, m_album, m_artURL, m_spotify_started,
                      m_is_playing);
 }
 
@@ -110,7 +110,7 @@ void DBusListener::getSpotifyInfo() {
     isChanged = update_if_changed(m_is_playing, false);
   }
   if (isChanged)
-    notify_observers(m_title, m_artist, m_artURL, m_spotify_started,
+    notify_observers(m_title, m_artist, m_album, m_artURL, m_spotify_started,
                      m_is_playing);
 }
 
@@ -133,6 +133,10 @@ bool DBusListener::parseMetadata(std::map<std::string, sdbus::Variant> meta) {
           isChanged =
               update_if_changed(m_artURL, data.second.get<std::string>());
           std::cout << "[DBus] Got Art URL: " << m_artURL << std::endl;
+        } else if (data.first == "xesam:album") {
+          isChanged =
+              update_if_changed(m_album, data.second.get<std::string>());
+          std::cout << "[DBus] Got album: " << m_album << std::endl;
         }
       } catch (const sdbus::Error &e) {
         std::cout << std::string(

@@ -17,6 +17,7 @@ private:
   std::string m_artURL;
   std::string m_artist;
   std::string m_title;
+  std::string m_album;
   bool m_spotify_started;
   bool m_is_playing;
 
