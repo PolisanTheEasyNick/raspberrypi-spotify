@@ -4,11 +4,7 @@
 #include <sdbus-c++/Error.h>
 #include <sdbus-c++/IProxy.h>
 
-template <typename T>
-bool update_if_changed(T &member, const T &new_value,
-                       bool currIsChanged = false) {
-  if (currIsChanged)
-    return true;
+template <typename T> bool update_if_changed(T &member, const T &new_value) {
   if (member != new_value) {
     member = new_value;
     return true;
@@ -81,11 +77,10 @@ void DBusListener::on_spotify_prop_changed(sdbus::Signal &signal) {
   for (auto &prop : properties) {
     if (prop.first == "Metadata") {
       auto meta_v = prop.second.get<std::map<std::string, sdbus::Variant>>();
-      isChanged = parseMetadata(meta_v);
+      isChanged |= parseMetadata(meta_v);
     } else if (prop.first == "PlaybackStatus") {
-      isChanged = update_if_changed(
-          m_is_playing, (prop.second.get<std::string>() == "Playing"),
-          isChanged);
+      isChanged |= update_if_changed(
+          m_is_playing, (prop.second.get<std::string>() == "Playing"));
     }
   }
   if (isChanged)
@@ -102,21 +97,21 @@ void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
     if (new_owner.empty()) {
       std::cout << "[DBus] org.mpris.MediaPlayer2.spotify has been removed"
                 << std::endl;
-      isChanged = update_if_changed(m_spotify_started, false, isChanged);
+      isChanged |= update_if_changed(m_spotify_started, false);
     } else {
       std::cout << "[DBus] org.mpris.MediaPlayer2.spotify has been created"
                 << std::endl;
-      isChanged = update_if_changed(m_spotify_started, true, isChanged);
+      isChanged |= update_if_changed(m_spotify_started, true);
       getSpotifyInfo();
     }
   } else if (name.find("org.mpris.MediaPlayer2.spotifyd") == 0) {
     if (new_owner.empty()) {
       std::cout << "[DBus] " << name << " has been removed" << std::endl;
-      isChanged = update_if_changed(m_spotify_started, false, isChanged);
+      isChanged |= update_if_changed(m_spotify_started, false);
       m_spotifyd_properties_proxy->unregister();
     } else {
       std::cout << "[DBus] " << name << " has been created" << std::endl;
-      isChanged = update_if_changed(m_spotify_started, true, isChanged);
+      isChanged |= update_if_changed(m_spotify_started, true);
       m_spotifyd_properties_proxy = sdbus::createProxy(
           *m_dbus_conn.get(), name, "/org/mpris/MediaPlayer2");
       m_spotifyd_properties_proxy->registerSignalHandler(
@@ -186,17 +181,17 @@ void DBusListener::getSpotifyInfo() {
     }
     m_spotify_started = spotifyFound;
 
-    isChanged =
+    isChanged |=
         parseMetadata(metadata_v.get<std::map<std::string, sdbus::Variant>>());
-    isChanged = update_if_changed(m_spotify_started, true, isChanged);
+    isChanged |= update_if_changed(m_spotify_started, true);
     auto playback = spotifyProxy->getProperty("PlaybackStatus")
                         .onInterface("org.mpris.MediaPlayer2.Player");
-    isChanged = update_if_changed(
-        m_is_playing, (playback.get<std::string>() == "Playing"), isChanged);
+    isChanged |= update_if_changed(m_is_playing,
+                                   (playback.get<std::string>() == "Playing"));
   } catch (sdbus::Error) {
     std::cout << "[DBus] Spotify not started!" << std::endl;
-    isChanged = update_if_changed(m_spotify_started, false, isChanged);
-    isChanged = update_if_changed(m_is_playing, false, isChanged);
+    isChanged |= update_if_changed(m_spotify_started, false);
+    isChanged |= update_if_changed(m_is_playing, false);
   }
   if (isChanged)
     notify_observers(m_title, m_artist, m_album, m_artURL, m_spotify_started,
@@ -215,16 +210,16 @@ bool DBusListener::parseMetadata(std::map<std::string, sdbus::Variant> meta) {
     if (type == "s") {
       try {
         if (data.first == "xesam:title") {
-          isChanged = update_if_changed(m_title, data.second.get<std::string>(),
-                                        isChanged);
+          isChanged |=
+              update_if_changed(m_title, data.second.get<std::string>());
           std::cout << "[DBus] Got title: " << m_title << std::endl;
         } else if (data.first == "mpris:artUrl") {
-          isChanged = update_if_changed(
-              m_artURL, data.second.get<std::string>(), isChanged);
+          isChanged |=
+              update_if_changed(m_artURL, data.second.get<std::string>());
           std::cout << "[DBus] Got Art URL: " << m_artURL << std::endl;
         } else if (data.first == "xesam:album") {
-          isChanged = update_if_changed(m_album, data.second.get<std::string>(),
-                                        isChanged);
+          isChanged |=
+              update_if_changed(m_album, data.second.get<std::string>());
           std::cout << "[DBus] Got album: " << m_album << std::endl;
         }
       } catch (const sdbus::Error &e) {
@@ -246,7 +241,7 @@ bool DBusListener::parseMetadata(std::map<std::string, sdbus::Variant> meta) {
           else if (!entry.empty())
             artist += ", " + entry;
         }
-        isChanged = update_if_changed(m_artist, artist, isChanged);
+        isChanged |= update_if_changed(m_artist, artist);
         std::cout << "[DBus] Got artist: " << m_artist << std::endl;
       }
     }
