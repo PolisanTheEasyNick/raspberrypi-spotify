@@ -8,12 +8,13 @@
 class DBusListener : public Subject {
 private:
   std::unique_ptr<sdbus::IConnection> m_dbus_conn;
-  std::unique_ptr<sdbus::IProxy> m_properties_proxy, m_name_owner_proxy,
-      m_gamemode_proxy;
+  std::unique_ptr<sdbus::IProxy> m_spotify_properties_proxy, m_name_owner_proxy,
+      m_gamemode_proxy, m_spotifyd_properties_proxy;
   void on_spotify_prop_changed(sdbus::Signal &signal);
   void on_name_owner_changed(sdbus::Signal &signal);
   void on_game_prop_changed(sdbus::Signal &signal);
   bool parseMetadata(std::map<std::string, sdbus::Variant> meta);
+  std::string findSpotifyd();
 
   // spotify related data
   std::string m_artURL;

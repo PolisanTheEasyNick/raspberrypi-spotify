@@ -35,4 +35,4 @@ For starting service on system boot you can use:
 - [x] DBus listener  
 - [x] gamemoderun detector from DBus (for showing monitoring info instead Spotify while playing)  
 - [x] systemctl service  
-- [ ] spotifyd support 
+- [x] spotifyd support 
