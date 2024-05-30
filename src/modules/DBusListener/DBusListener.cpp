@@ -107,6 +107,7 @@ void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
       std::cout << "[DBus] org.mpris.MediaPlayer2.spotify has been created"
                 << std::endl;
       isChanged = update_if_changed(m_spotify_started, true, isChanged);
+      getSpotifyInfo();
     }
   } else if (name.find("org.mpris.MediaPlayer2.spotifyd") == 0) {
     if (new_owner.empty()) {
@@ -122,6 +123,7 @@ void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
           "org.freedesktop.DBus.Properties", "PropertiesChanged",
           [this](sdbus::Signal &sig) { on_spotify_prop_changed(sig); });
       m_spotifyd_properties_proxy->finishRegistration();
+      getSpotifyInfo();
     }
   }
   if (isChanged)
