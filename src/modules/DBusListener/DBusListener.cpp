@@ -182,6 +182,7 @@ void DBusListener::getSpotifyInfo() {
                   << std::endl;
       }
     }
+    m_spotify_started = spotifyFound;
 
     isChanged =
         parseMetadata(metadata_v.get<std::map<std::string, sdbus::Variant>>());
