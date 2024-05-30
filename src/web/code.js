@@ -11,28 +11,24 @@ async function parseData(spotifyData) {
         document.getElementById('album').innerText = album;
         document.getElementById('artist').innerText = artist;
         const albumArt = document.getElementById('album-art');
-        albumArt.style.opacity = 0;
         const img = new Image();
         img.onload = function() {
             albumArt.src = artURL;
-            albumArt.style.opacity = 1;
+            albumArt.style.display = "inline";
             document.querySelector('.background').style.backgroundImage = `url(${artURL})`;
         };
         img.onerror = function() {
             console.log("New image failed to load. Keeping the old one.");
             if (!albumArt.src) {
-                albumArt.style.opacity = 0;
-                document.querySelector('.background').style.backgroundImage = "none";
-                document.querySelector('.background').style.backgroundColor = "black";
+                albumArt.style.display = "none";
             }
         };
         if(artURL) {
           img.src = artURL;
         } else {
             console.log("No art URL!");
-            albumArt.style.opacity = 0;
-            document.querySelector('.background').style.backgroundImage = "none";
-            document.querySelector('.background').style.backgroundColor = "black";
+            albumArt.style.display = "none";
+            albumArt.src = "";
         }
     } catch (error) {
         console.error('Error parsing WebSocket data', error);
