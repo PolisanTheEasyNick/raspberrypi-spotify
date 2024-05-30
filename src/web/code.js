@@ -14,6 +14,7 @@ async function getSpotifyInfoWS() {
 
                 let title = spotifyData.title;
                 let artist = spotifyData.artist;
+                let album = spotifyData.album;
                 const artURL = spotifyData.artURL;
 
                 if (title.length > 55) {
@@ -23,16 +24,20 @@ async function getSpotifyInfoWS() {
                     document.getElementById('title').style.fontSize = "1.5em";
                 }
 
-                if (artist.length > 15) {
+                if (artist.length > 16) {
                     artist = artist.substring(0, 15) + "…";
                     document.getElementById('artist').style.fontSize = "1em";
                 } else {
                     document.getElementById('artist').style.fontSize = "1.25em";
                 }
 
-                console.log("Got title: ", title, ", artist: ", artist, ", artURL: ", artURL);
-                document.getElementById('title').innerText = title;
+                if (album.length > 20) {
+                    album = album.substring(0, 19) + "…";
+                }
 
+                console.log("Got title: ", title, ", artist: ", artist, ", artURL: ", artURL, ", album: ", album);
+                document.getElementById('title').innerText = title;
+                document.getElementById('album').innerText = album;
                 document.getElementById('artist').innerText = artist;
                 const albumArt = document.getElementById('album-art');
                 albumArt.style.opacity = 0;

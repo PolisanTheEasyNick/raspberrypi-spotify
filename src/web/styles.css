@@ -79,3 +79,10 @@ html {
 #artist {
     margin-top: 10px;
 }
+
+#album {
+    margin-top: 15px;
+    color: #c1c1c1;
+    font-size: 1em;
+    text-shadow: 1px 1px 1px black;
+}
