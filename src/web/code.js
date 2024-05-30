@@ -1,6 +1,5 @@
 async function parseData(spotifyData) {
     try {
-        
         let title = spotifyData.title;
         let artist = spotifyData.artist;
         let album = spotifyData.album;
@@ -18,10 +17,8 @@ async function parseData(spotifyData) {
             document.querySelector('.background').style.backgroundImage = `url(${artURL})`;
         };
         img.onerror = function() {
-            console.log("New image failed to load. Keeping the old one.");
-            if (!albumArt.src) {
-                albumArt.style.display = "none";
-            }
+            albumArt.style.display = "none";
+            document.querySelector('.background').style.backgroundImage = "none";
         };
         if(artURL) {
           img.src = artURL;
@@ -29,6 +26,7 @@ async function parseData(spotifyData) {
             console.log("No art URL!");
             albumArt.style.display = "none";
             albumArt.src = "";
+            document.querySelector('.background').style.backgroundImage = "none";
         }
     } catch (error) {
         console.error('Error parsing WebSocket data', error);
@@ -81,8 +79,10 @@ async function getSpotifyDInfoWS() {
         socket.addEventListener('message', async function (event) {
             const spotifyData = JSON.parse(event.data);
             console.log("Got message from spotifyd: ", spotifyData)
-            parseData(spotifyData);
             useSpotifyD = spotifyData.isPlaying == "True";
+            if(useSpotifyD)
+                parseData(spotifyData);
+            
         });
 
         socket.addEventListener('close', (event) => {

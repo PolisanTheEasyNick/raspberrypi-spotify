@@ -31,6 +31,7 @@ html {
     height: 100%;
     background-size: cover;
     background-position: center;
+    background-color: black;
     filter: blur(10px) brightness(60%);
     z-index: 1;
     animation: rotate 50s linear infinite;
@@ -63,12 +64,10 @@ html {
     max-width: 250px;
     max-height: 250px;
     margin-right: 10px;
-    transition: opacity 0.5s ease;
 }
 
 .info {
     text-align: left;
-
 }
 
 #title {
