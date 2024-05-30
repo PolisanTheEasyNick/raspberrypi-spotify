@@ -40,7 +40,7 @@ async function parseData(spotifyData) {
 }
 
 
-var spotifydStarted = false;
+var useSpotifyD = false;
 
 async function getSpotifyInfoWS() {
     let socket;
@@ -53,7 +53,7 @@ async function getSpotifyInfoWS() {
         });
 
         socket.addEventListener('message', async function (event) {
-            if(!spotifydStarted) {
+            if(!useSpotifyD) {
                 const spotifyData = JSON.parse(event.data);
                 console.log("Got message from PC: ", spotifyData)
                 parseData(spotifyData);
@@ -79,17 +79,18 @@ async function getSpotifyDInfoWS() {
 
         socket.addEventListener('open', () => {
             console.log('WebSocket connected');
-            spotifydStarted = true;
+            useSpotifyD = true;
         });
 
         socket.addEventListener('message', async function (event) {
             const spotifyData = JSON.parse(event.data);
             console.log("Got message from spotifyd: ", spotifyData)
             parseData(spotifyData);
+            useSpotifyD = spotifyData.isPlaying == "True";
         });
 
         socket.addEventListener('close', (event) => {
-            spotifydStarted = false;
+            useSpotifyD = false;
             console.error('WebSocket closed. Reconnecting in 10 seconds...');
             setTimeout(connectWebSocket, 10000); 
         });
