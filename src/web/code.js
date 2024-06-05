@@ -1,3 +1,20 @@
+function toBase64(img) {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL("image/png");
+}
+
+const albumArt = document.getElementById('album-art');
+
+function loadImageFromBase64(base64Data) {
+    albumArt.src = base64Data;
+    albumArt.style.display = "inline";
+    document.querySelector('.background').style.backgroundImage = `url(${base64Data})`;
+}
+
 async function parseData(spotifyData) {
     try {
         let title = spotifyData.title;
@@ -9,19 +26,29 @@ async function parseData(spotifyData) {
         document.getElementById('title').innerText = title;
         document.getElementById('album').innerText = album;
         document.getElementById('artist').innerText = artist;
-        const albumArt = document.getElementById('album-art');
+        const cacheKey = artURL.split('/image/')[1];
         const img = new Image();
+        img.crossOrigin = 'anonymous';
         img.onload = function() {
-            albumArt.src = artURL;
-            albumArt.style.display = "inline";
-            document.querySelector('.background').style.backgroundImage = `url(${artURL})`;
+            const base64Data = toBase64(img);
+            localStorage.setItem(cacheKey, base64Data);
+            loadImageFromBase64(base64Data);
         };
+        
         img.onerror = function() {
             albumArt.style.display = "none";
             document.querySelector('.background').style.backgroundImage = "none";
         };
-        if(artURL) {
-          img.src = artURL;
+        
+        if (artURL) {
+            const cachedData = localStorage.getItem(cacheKey);
+            if (cachedData) {
+                console.log("Loading album art image from local storage!");
+                loadImageFromBase64(cachedData);
+            } else {
+                console.log("Album art not found in local storage, downloading!");
+                img.src = artURL;
+            }
         } else {
             console.log("No art URL!");
             albumArt.style.display = "none";
