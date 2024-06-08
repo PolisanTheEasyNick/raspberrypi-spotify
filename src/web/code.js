@@ -98,7 +98,6 @@ async function parseData(spotifyData) {
             const img = new Image();
             //img.crossOrigin = window.location.protocol + '//' + window.location.host;
             img.crossOrigin = "anonymous";
-            console.log("Cross origin: ", img.crossOrigin);
             img.onload = async function() {
                 const base64Data = toBase64(img);
                 await saveImageToIndexedDB(cacheKey, base64Data);
