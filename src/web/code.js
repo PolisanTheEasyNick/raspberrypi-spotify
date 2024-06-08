@@ -101,7 +101,7 @@ async function parseData(spotifyData) {
             console.log("Cross origin: ", img.crossOrigin);
             img.onload = async function() {
                 const base64Data = toBase64(img);
-                //await saveImageToIndexedDB(cacheKey, base64Data);
+                await saveImageToIndexedDB(cacheKey, base64Data);
                 loadImageFromBase64(base64Data);
             };
             img.onerror = function() {
