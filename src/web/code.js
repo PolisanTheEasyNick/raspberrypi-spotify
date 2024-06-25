@@ -54,6 +54,7 @@ function toBase64(img) {
 
 async function fetchYouTubeThumbnail(title, artist) {
     const query = `${title} ${artist}`;
+    console.log("Fetching from youtube: ", query);
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&key=${youtubeDataAPIKEY}&type=video&videoEmbeddable=true`;
 
     try {
@@ -81,49 +82,53 @@ async function parseData(spotifyData) {
         document.getElementById('album').innerText = album;
         document.getElementById('artist').innerText = artist;
         
-        if (!artURL && youtubeDataAPIKEY) {
-            fromYouTube = true;
-            console.log("No art URL provided, fetching from YouTube.");
-            artURL = await fetchYouTubeThumbnail(title, artist);
-        }
-        
+        let cacheKey;
         if (artURL) {
-            let cacheKey;
             if (artURL.includes('/vi/')) {
                 cacheKey = artURL.split('/vi/')[1].split('/')[0];
             } else {
                 cacheKey = artURL.split('/image/')[1];
             }
+        } else {
+            cacheKey = `${title}-${artist}`;
+        }
 
-            const img = new Image();
-            //img.crossOrigin = window.location.protocol + '//' + window.location.host;
-            img.crossOrigin = "anonymous";
-            img.onload = async function() {
-                const base64Data = toBase64(img);
-                await saveImageToIndexedDB(cacheKey, base64Data);
-                loadImageFromBase64(base64Data);
-            };
-            img.onerror = function() {
-                albumArt.style.display = "none";
-                document.querySelector('.background').style.backgroundImage = "none";
-            };
+        const cachedData = await getImageFromIndexedDB(cacheKey);
 
-            const cachedData = await getImageFromIndexedDB(cacheKey);
-            if (cachedData) {
-                console.log("Loading album art image from IndexedDB!");
-                loadImageFromBase64(cachedData);
-            } else {
+        if (cachedData) {
+            console.log("Loading album art image from IndexedDB!");
+            loadImageFromBase64(cachedData);
+        } else {
+            if (!artURL && youtubeDataAPIKEY) {
+                fromYouTube = true;
+                console.log("No art URL provided, fetching from YouTube.");
+                artURL = await fetchYouTubeThumbnail(title, artist);
+            }
+
+            if (artURL) {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = async function() {
+                    const base64Data = toBase64(img);
+                    await saveImageToIndexedDB(cacheKey, base64Data);
+                    loadImageFromBase64(base64Data);
+                };
+                img.onerror = function() {
+                    albumArt.style.display = "none";
+                    document.querySelector('.background').style.backgroundImage = "none";
+                };
+
                 console.log("Album art not found in IndexedDB, downloading!");
                 if (fromYouTube)
-                  img.src = corsProxy + artURL;
+                    img.src = corsProxy + artURL;
                 else
-                  img.src = artURL;
+                    img.src = artURL;
+            } else {
+                console.log("No art URL found!");
+                albumArt.style.display = "none";
+                albumArt.src = "";
+                document.querySelector('.background').style.backgroundImage = "none";
             }
-        } else {
-            console.log("No art URL found!");
-            albumArt.style.display = "none";
-            albumArt.src = "";
-            document.querySelector('.background').style.backgroundImage = "none";
         }
     } catch (error) {
         console.error('Error parsing WebSocket data', error);
