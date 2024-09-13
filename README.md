@@ -44,3 +44,9 @@ Then just build and start raspberrypi-spotify on your Raspberry Pi.
 
 ## How to see what i'm listening right now?
 For displaying info just open src/web/index.html in any WebBrowser.
+
+## PiLED support
+raspberrypi-spotify have a feature to get accent color from Spotify Album Art and send it to PiLED server.  
+BUT you need to manually config it:  
+1. Remove comments at CMakeLists.txt regarding defining `PILED`  
+2. Edit `src/modules/ColorParser.cpp` to set SHARED_SECRET; PiLED server ip and default color setting.  

@@ -7,18 +7,45 @@ enable_testing()
 find_package(sdbus-c++ REQUIRED)
 find_package(websocketpp REQUIRED)
 
-add_executable(
-    raspberrypi-spotify
-    src/main.cpp
-    src/modules/DBusListener/DBusListener.cpp
-    src/modules/DBusListener/DBusListener.h
-    src/modules/WS-server/WSServer.cpp
-    src/modules/WS-server/WSServer.h
-    src/modules/Observer.h
-    src/modules/Subject.h
-)
+add_definitions(-DPILED) #Check ColorParser and config it!
+set(PILED 1)
 
-target_link_libraries(raspberrypi-spotify PRIVATE SDBusCpp::sdbus-c++ websocketpp::websocketpp)
+if(PILED)
+    find_package(CURL REQUIRED)
+    find_package(OpenSSL REQUIRED)
+    find_package(OpenCV 4.0.0 REQUIRED)
+    include_directories("/usr/include/opencv4/")
+endif()
+
+if(PILED)
+
+    add_executable(
+        raspberrypi-spotify
+        src/main.cpp
+        src/modules/DBusListener/DBusListener.cpp
+        src/modules/DBusListener/DBusListener.h
+        src/modules/WS-server/WSServer.cpp
+        src/modules/WS-server/WSServer.h
+        src/modules/Observer.h
+        src/modules/Subject.h
+        src/modules/ColorParser/ColorParser.h
+        src/modules/ColorParser/ColorParser.cpp
+    )
+    target_link_libraries(raspberrypi-spotify PRIVATE SDBusCpp::sdbus-c++ websocketpp::websocketpp CURL::libcurl OpenSSL::SSL)
+else()
+    add_executable(
+        raspberrypi-spotify
+        src/main.cpp
+        src/modules/DBusListener/DBusListener.cpp
+        src/modules/DBusListener/DBusListener.h
+        src/modules/WS-server/WSServer.cpp
+        src/modules/WS-server/WSServer.h
+        src/modules/Observer.h
+        src/modules/Subject.h
+    )
+    target_link_libraries(raspberrypi-spotify PRIVATE SDBusCpp::sdbus-c++ websocketpp::websocketpp)
+endif()
+
 
 install(TARGETS raspberrypi-spotify DESTINATION bin)
 

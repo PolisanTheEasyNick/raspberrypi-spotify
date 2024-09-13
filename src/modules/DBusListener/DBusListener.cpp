@@ -4,6 +4,10 @@
 #include <sdbus-c++/Error.h>
 #include <sdbus-c++/IProxy.h>
 
+#ifdef PILED
+std::atomic<bool> Subject::stopRequested(false);
+#endif
+
 template <typename T> bool update_if_changed(T &member, const T &new_value) {
   if (member != new_value) {
     member = new_value;
