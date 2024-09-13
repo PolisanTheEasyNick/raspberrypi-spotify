@@ -9,11 +9,10 @@
 #include "ColorParser.h"
 #include <algorithm>
 #include <arpa/inet.h>
-#include <chrono>
 #include <cstring>
-#include <iomanip>
 #include <iostream>
 #include <netinet/in.h>
+#include <opencv2/opencv.hpp>
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 #include <random>
@@ -48,54 +47,43 @@ void adjustBrightness(int &red, int &green, int &blue, int targetBrightness) {
   }
 }
 
-void calculateAccentColor(unsigned char *data, int width, int height,
-                          int channels, int &accentRed, int &accentGreen,
-                          int &accentBlue) {
-  std::unordered_map<Color, int> colorHistogram;
-  int pixelCount = width * height;
+void calculateAccentColorWithKMeansAndBlurring(
+    unsigned char *data, int width, int height, int channels, int &accentRed,
+    int &accentGreen, int &accentBlue, int blurKernelSize = 51, int K = 3) {
+  cv::Mat image(height, width, CV_8UC3, data);
 
-  for (int i = 0; i < pixelCount; ++i) {
-    int index = i * channels;
-    Color color = {data[index], data[index + 1], data[index + 2]};
-    colorHistogram[color]++;
+  cv::Mat blurredImage;
+  cv::GaussianBlur(image, blurredImage,
+                   cv::Size(blurKernelSize, blurKernelSize), 0);
+
+  cv::Mat reshapedImage =
+      blurredImage.reshape(1, blurredImage.rows * blurredImage.cols);
+
+  reshapedImage.convertTo(reshapedImage, CV_32F);
+
+  cv::Mat labels, centers;
+  cv::kmeans(reshapedImage, K, labels,
+             cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT,
+                              10, 1.0),
+             3, cv::KMEANS_PP_CENTERS, centers);
+
+  centers.convertTo(centers, CV_8U);
+
+  cv::Mat clusteredImage = centers.reshape(3, centers.rows);
+
+  std::vector<int> clusterCounts(K, 0);
+  for (int i = 0; i < labels.rows; ++i) {
+    clusterCounts[labels.at<int>(i)]++;
   }
 
-  auto maxElement = std::max_element(
-      colorHistogram.begin(), colorHistogram.end(),
-      [](const std::pair<Color, int> &a, const std::pair<Color, int> &b) {
-        return a.second < b.second;
-      });
+  int maxIdx = std::distance(
+      clusterCounts.begin(),
+      std::max_element(clusterCounts.begin(), clusterCounts.end()));
+  cv::Vec3b dominantColor = clusteredImage.at<cv::Vec3b>(maxIdx);
 
-  if (maxElement != colorHistogram.end()) {
-    accentRed = maxElement->first.r;
-    accentGreen = maxElement->first.g;
-    accentBlue = maxElement->first.b;
-  }
-}
-
-void calculateAccentColorHistogram(unsigned char *data, int width, int height,
-                                   int channels, int &accentRed,
-                                   int &accentGreen, int &accentBlue) {
-  std::unordered_map<int, int> colorHistogram;
-  int maxCount = 0;
-  int maxColor = 0;
-
-  for (int i = 0; i < width * height; ++i) {
-    int r = data[i * channels + 0];
-    int g = data[i * channels + 1];
-    int b = data[i * channels + 2];
-    int color = (r << 16) | (g << 8) | b;
-
-    colorHistogram[color]++;
-    if (colorHistogram[color] > maxCount) {
-      maxCount = colorHistogram[color];
-      maxColor = color;
-    }
-  }
-
-  accentRed = (maxColor >> 16) & 0xFF;
-  accentGreen = (maxColor >> 8) & 0xFF;
-  accentBlue = maxColor & 0xFF;
+  accentRed = dominantColor[0];
+  accentGreen = dominantColor[1];
+  accentBlue = dominantColor[2];
 }
 
 size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -166,34 +154,25 @@ void requestParseImage(const std::string &url) {
   }
 
   int avgRed = 0, avgGreen = 0, avgBlue = 0;
-  calculateAccentColorHistogram(imgData, width, height, channels, avgRed,
-                                avgGreen, avgBlue);
+  calculateAccentColorWithKMeansAndBlurring(imgData, width, height, channels,
+                                            avgRed, avgGreen, avgBlue);
 
   int brightness = (avgRed + avgGreen + avgBlue) / 3;
-  if (brightness < 50) {
-    std::cout << "Color is dark, trying calculateAccentColor algorithm."
-              << std::endl;
-    calculateAccentColor(imgData, width, height, channels, avgRed, avgGreen,
-                         avgBlue);
-    brightness = (avgRed + avgGreen + avgBlue) / 3;
-    if (brightness < 50) {
-      std::cout << "Color is dark, trying calculateAverageColor algorithm."
-                << std::endl;
-      calculateAverageColor(imgData, width, height, channels, avgRed, avgGreen,
-                            avgBlue);
-      brightness = (avgRed + avgGreen + avgBlue) / 3;
-      if (brightness < 50) {
-        std::cout << "Color is dark, using default color." << std::endl;
-        avgRed = 209;
-        avgGreen = 0;
-        avgBlue = 255;
-      }
-    }
-  }
-  adjustBrightness(avgRed, avgGreen, avgBlue, 100);
 
-  std::cout << "Final color: (" << avgRed << ", " << avgGreen << ", " << avgBlue
-            << ")" << std::endl;
+  int minChannel = std::min({avgRed, avgGreen, avgBlue});
+  int maxChannel = std::max({avgRed, avgGreen, avgBlue});
+  int diff = maxChannel - minChannel;
+
+  if (brightness < 50) {
+
+    std::cout << "Color is uniformly dark, using default color." << std::endl;
+    avgRed = 209;
+    avgGreen = 0;
+    avgBlue = 255;
+
+  } else {
+    std::cout << "Color is bright enough." << std::endl;
+  }
 
   stbi_image_free(imgData);
 
@@ -240,7 +219,7 @@ void send_color_request(uint8_t red, uint8_t green, uint8_t blue,
 
   uint64_t current_time = __bswap_constant_64(time(NULL));
 
-  std::cout << "Current time: " << current_time << std::endl;
+  // std::cout << "Current time: " << current_time << std::endl;
 
   // generate a random nonce
   std::random_device rd;
@@ -270,28 +249,28 @@ void send_color_request(uint8_t red, uint8_t green, uint8_t blue,
   std::memcpy(header_with_payload, header, 18);
   std::memcpy(header_with_payload + 18, payload, 5);
 
-  std::cout << "Header with payload:\n";
+  // std::cout << "Header with payload:\n";
 
-  for (int i = 0; i < 23; i++) {
-    printf("%02x", header_with_payload[i]);
-  }
-  printf("\n");
-  for (int i = 0; i < 23; i++) {
-    printf("%02x ", header_with_payload[i]);
-  }
-  printf("\n");
+  // for (int i = 0; i < 23; i++) {
+  //   printf("%02x", header_with_payload[i]);
+  // }
+  // printf("\n");
+  // for (int i = 0; i < 23; i++) {
+  //   printf("%02x ", header_with_payload[i]);
+  // }
+  // printf("\n");
 
   // compute HMAC-SHA256
   unsigned char GENERATED_HMAC[32];
   unsigned int hmac_len;
-  std::string SHARED_KEY = "SHARED_KEY";
+  std::string SHARED_KEY = "SHARED_SECRET";
   HMAC(EVP_sha256(), SHARED_KEY.c_str(), SHARED_KEY.size(), header_with_payload,
        23, GENERATED_HMAC, &hmac_len);
-  std::cout << "Timestamp: " << current_time << std::endl;
-  std::cout << "Nonce: " << nonce << std::endl;
-  std::cout << "Payload: ";
+  // std::cout << "Timestamp: " << current_time << std::endl;
+  // std::cout << "Nonce: " << nonce << std::endl;
+  // std::cout << "Payload: ";
   printf("%x %x %x %x\n", red, green, blue, duration);
-  std::cout << "Generated HMAC:" << std::endl;
+  // std::cout << "Generated HMAC:" << std::endl;
   for (size_t i = 0; i < 32; i++) {
     printf("%x ", GENERATED_HMAC[i]);
   }
@@ -302,7 +281,7 @@ void send_color_request(uint8_t red, uint8_t green, uint8_t blue,
   std::memcpy(tcp_package, header, 18);
   std::memcpy(tcp_package + 18, GENERATED_HMAC, 32);
   std::memcpy(tcp_package + 50, payload, 5);
-  std::cout << "Generated TCP Package:\n";
+  //  std::cout << "Generated TCP Package:\n";
   for (int i = 0; i < 54; i++) {
     printf("%x ", tcp_package[i]);
   }

@@ -13,8 +13,9 @@ set(PILED 1)
 if(PILED)
     find_package(CURL REQUIRED)
     find_package(OpenSSL REQUIRED)
-    find_package(OpenCV 4.0.0 REQUIRED)
-    include_directories("/usr/include/opencv4/")
+    find_package(OpenCV REQUIRED)
+    find_package(Protobuf REQUIRED)
+    include_directories(${OpenCV_INCLUDE_DIRS})
 endif()
 
 if(PILED)
@@ -31,7 +32,7 @@ if(PILED)
         src/modules/ColorParser/ColorParser.h
         src/modules/ColorParser/ColorParser.cpp
     )
-    target_link_libraries(raspberrypi-spotify PRIVATE SDBusCpp::sdbus-c++ websocketpp::websocketpp CURL::libcurl OpenSSL::SSL)
+    target_link_libraries(raspberrypi-spotify PRIVATE SDBusCpp::sdbus-c++ websocketpp::websocketpp CURL::libcurl OpenSSL::SSL opencv_highgui)
 else()
     add_executable(
         raspberrypi-spotify
