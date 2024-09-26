@@ -31,22 +31,8 @@ protected:
                           is_playing, is_gamemode_running);
     }
 #ifdef PILED
-    if (!is_gamemode_running) {
-      std::cout << "Starting image thread" << std::endl;
-
-      if (is_playing) {
-        std::lock_guard<std::mutex> lock(thread_mutex);
-
-        if (imageThread.joinable()) {
-          stopRequested = true;
-          imageThread.join();
-          stopRequested = false;
-        }
-
-        imageThread = std::thread(requestParseImage, artUrl);
-      } else {
-        send_color_request(209, 0, 255, 3, 0);
-      }
+    if (!is_playing) {
+      send_color_request(209, 0, 255, 3, 0);
     }
 #endif
   }
