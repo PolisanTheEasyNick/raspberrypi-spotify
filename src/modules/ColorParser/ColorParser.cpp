@@ -58,7 +58,6 @@ void send_tcp_packet(const std::string &host, int port,
 void send_color_request(uint8_t red, uint8_t green, uint8_t blue,
                         uint8_t duration, uint8_t steps) {
   using namespace std::chrono;
-
   // its so cursed bc contains C and C++ code mixed
   // i don't care, i just want it to work
 

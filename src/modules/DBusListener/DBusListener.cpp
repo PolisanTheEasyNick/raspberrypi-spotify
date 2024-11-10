@@ -29,7 +29,7 @@ DBusListener::DBusListener() {
   sdbus::ServiceName spotifyDestination{"org.mpris.MediaPlayer2.spotify"};
   sdbus::ObjectPath spotifyObjectPath{"/org/mpris/MediaPlayer2"};
   m_spotify_properties_proxy =
-      sdbus::createProxy(spotifyDestination, spotifyObjectPath);
+      sdbus::createProxy(*m_dbus_conn, spotifyDestination, spotifyObjectPath);
   sdbus::InterfaceName PropertiesInterfaceName{
       "org.freedesktop.DBus.Properties"};
   sdbus::SignalName PropertiesChangedSignalName{"PropertiesChanged"};
@@ -40,7 +40,8 @@ DBusListener::DBusListener() {
   // registering to spotify closed/open
   sdbus::ServiceName dbusDestination{"org.freedesktop.DBus"};
   sdbus::ObjectPath dbusObjectPath{"/org/freedesktop/DBus"};
-  m_name_owner_proxy = sdbus::createProxy(dbusDestination, dbusObjectPath);
+  m_name_owner_proxy =
+      sdbus::createProxy(*m_dbus_conn, spotifyDestination, spotifyObjectPath);
   sdbus::InterfaceName DBusInterfaceName{"org.freedesktop.DBus"};
   sdbus::SignalName NameOwnerChangedSignalName{"NameOwnerChanged"};
   m_name_owner_proxy->registerSignalHandler(
@@ -51,7 +52,7 @@ DBusListener::DBusListener() {
   sdbus::ServiceName gameModeDestination{"com.feralinteractive.GameMode"};
   sdbus::ObjectPath gameModeObjectPath{"/com/feralinteractive/GameMode"};
   m_gamemode_proxy =
-      sdbus::createProxy(gameModeDestination, gameModeObjectPath);
+      sdbus::createProxy(*m_dbus_conn, spotifyDestination, spotifyObjectPath);
   m_name_owner_proxy->registerSignalHandler(
       DBusInterfaceName, NameOwnerChangedSignalName,
       [this](sdbus::Signal sig) { on_game_prop_changed(sig); });
@@ -63,7 +64,7 @@ DBusListener::DBusListener() {
     // register to it prop changed
     sdbus::ServiceName spotifyDDestination{spotifydDest};
     m_spotifyd_properties_proxy =
-        sdbus::createProxy(spotifyDDestination, spotifyObjectPath);
+        sdbus::createProxy(*m_dbus_conn, spotifyDestination, spotifyObjectPath);
     m_spotifyd_properties_proxy->registerSignalHandler(
         PropertiesInterfaceName, PropertiesChangedSignalName,
         [this](sdbus::Signal sig) { on_spotify_prop_changed(sig); });
@@ -115,8 +116,8 @@ void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
     } else {
       sdbus::ServiceName spotifyDestination{"org.mpris.MediaPlayer2.spotify"};
       sdbus::ObjectPath spotifyObjectPath{"/org/mpris/MediaPlayer2"};
-      m_spotify_properties_proxy =
-          sdbus::createProxy(spotifyDestination, spotifyObjectPath);
+      m_spotify_properties_proxy = sdbus::createProxy(
+          *m_dbus_conn, spotifyDestination, spotifyObjectPath);
       sdbus::InterfaceName PropertiesInterfaceName{
           "org.freedesktop.DBus.Properties"};
       sdbus::SignalName PropertiesChangedSignalName{"PropertiesChanged"};
@@ -141,8 +142,8 @@ void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
           "org.freedesktop.DBus.Properties"};
       sdbus::SignalName PropertiesChangedSignalName{"PropertiesChanged"};
       sdbus::ObjectPath spotifyObjectPath{"/org/mpris/MediaPlayer2"};
-      m_spotifyd_properties_proxy =
-          sdbus::createProxy(spotifyDDestination, spotifyObjectPath);
+      m_spotifyd_properties_proxy = sdbus::createProxy(
+          *m_dbus_conn, spotifyDDestination, spotifyObjectPath);
       m_spotifyd_properties_proxy->registerSignalHandler(
           PropertiesInterfaceName, PropertiesChangedSignalName,
           [this](sdbus::Signal sig) { on_spotify_prop_changed(sig); });
@@ -197,10 +198,10 @@ void DBusListener::getSpotifyInfo() {
       try {
         sdbus::ServiceName spotifyDDestination{spotifydDest};
         sdbus::ObjectPath spotifyObjectPath{"/org/mpris/MediaPlayer2"};
-        spotifyProxy =
-            sdbus::createProxy(spotifyDDestination, spotifyObjectPath);
-        spotifyProxy =
-            sdbus::createProxy(spotifyDDestination, spotifyObjectPath);
+        spotifyProxy = sdbus::createProxy(*m_dbus_conn, spotifyDDestination,
+                                          spotifyObjectPath);
+        spotifyProxy = sdbus::createProxy(*m_dbus_conn, spotifyDDestination,
+                                          spotifyObjectPath);
         spotifyProxy->callMethod("Get")
             .onInterface("org.freedesktop.DBus.Properties")
             .withArguments("org.mpris.MediaPlayer2.Player", "Metadata")
@@ -285,7 +286,8 @@ bool DBusListener::parseMetadata(std::map<std::string, sdbus::Variant> meta) {
 std::string DBusListener::findSpotifyd() {
   sdbus::ServiceName dbusDestination{"org.freedesktop.DBus"};
   sdbus::ObjectPath dbusObjectPath{"/org/freedesktop/DBus"};
-  auto proxy = sdbus::createProxy(dbusDestination, dbusObjectPath);
+  auto proxy =
+      sdbus::createProxy(*m_dbus_conn, dbusDestination, dbusObjectPath);
   std::vector<std::string> names;
   proxy->callMethod("ListNames")
       .onInterface("org.freedesktop.DBus")
