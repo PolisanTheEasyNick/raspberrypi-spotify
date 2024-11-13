@@ -41,7 +41,7 @@ DBusListener::DBusListener() {
   sdbus::ServiceName dbusDestination{"org.freedesktop.DBus"};
   sdbus::ObjectPath dbusObjectPath{"/org/freedesktop/DBus"};
   m_name_owner_proxy =
-      sdbus::createProxy(*m_dbus_conn, spotifyDestination, spotifyObjectPath);
+      sdbus::createProxy(*m_dbus_conn, dbusDestination, dbusObjectPath);
   sdbus::InterfaceName DBusInterfaceName{"org.freedesktop.DBus"};
   sdbus::SignalName NameOwnerChangedSignalName{"NameOwnerChanged"};
   m_name_owner_proxy->registerSignalHandler(
@@ -53,7 +53,7 @@ DBusListener::DBusListener() {
   sdbus::ObjectPath gameModeObjectPath{"/com/feralinteractive/GameMode"};
   m_gamemode_proxy =
       sdbus::createProxy(*m_dbus_conn, spotifyDestination, spotifyObjectPath);
-  m_name_owner_proxy->registerSignalHandler(
+  m_gamemode_proxy->registerSignalHandler(
       DBusInterfaceName, NameOwnerChangedSignalName,
       [this](sdbus::Signal sig) { on_game_prop_changed(sig); });
 
@@ -105,7 +105,6 @@ void DBusListener::on_spotify_prop_changed(sdbus::Signal &signal) {
 void DBusListener::on_name_owner_changed(sdbus::Signal &signal) {
   std::string name, old_owner, new_owner;
   signal >> name >> old_owner >> new_owner;
-
   bool isChanged = false;
   if (name == "org.mpris.MediaPlayer2.spotify") {
     if (new_owner.empty()) {
