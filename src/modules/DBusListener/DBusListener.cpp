@@ -52,9 +52,9 @@ DBusListener::DBusListener() {
   sdbus::ServiceName gameModeDestination{"com.feralinteractive.GameMode"};
   sdbus::ObjectPath gameModeObjectPath{"/com/feralinteractive/GameMode"};
   m_gamemode_proxy =
-      sdbus::createProxy(*m_dbus_conn, spotifyDestination, spotifyObjectPath);
+      sdbus::createProxy(*m_dbus_conn, gameModeDestination, gameModeObjectPath);
   m_gamemode_proxy->registerSignalHandler(
-      DBusInterfaceName, NameOwnerChangedSignalName,
+      PropertiesInterfaceName, PropertiesChangedSignalName,
       [this](sdbus::Signal sig) { on_game_prop_changed(sig); });
 
   // searching for spotifyd
